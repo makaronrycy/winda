@@ -14,5 +14,6 @@
 #include <memory.h>
 #include <tchar.h>
 #include <gdiplus.h>
+
 #pragma comment(lib,"gdiplus.lib")
 using namespace Gdiplus;

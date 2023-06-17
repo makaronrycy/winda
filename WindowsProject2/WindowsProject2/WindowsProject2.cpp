@@ -5,6 +5,7 @@
 #include "WindowsProject2.h"
 
 #define MAX_LOADSTRING 100
+#define FLOOR 4
 
 // Zmienne globalne:
 HINSTANCE hInst;                                // bieżące wystąpienie
@@ -16,6 +17,19 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+class Elevator {
+    int floor;
+private:
+    int max_weight;
+    
+
+};
+class Person {
+public:
+    int weight;
+
+};
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -62,12 +76,16 @@ void PaintScenery(HDC hdc)
 {
     Graphics graphics(hdc);
     Pen pen(Color(255, 0, 0, 0),5);
-    for (int floor = 1; floor <= 4; floor++) {
-        graphics.DrawLine(&pen, 100, 100 * floor , 500, 100 * floor);
+    for (int f = 0; f < 5; f++) {
+        if (f % 2) {
+            graphics.DrawLine(&pen, 600, 200 + 150 * f, 1000, 200 + 150 * f);
+        }
+        else {
+            graphics.DrawLine(&pen, 0, 200 + 150 * f, 400, 200 + 150 * f);
+        }
     }
     
-
-    TextOut(hdc, 10, 30, L"Witaj_świecie", 5);
+    TextOut(hdc, 0, 0, L"masa:",5);
 }
 //
 //  FUNKCJA: MyRegisterClass()
@@ -95,6 +113,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     return RegisterClassExW(&wcex);
 }
 
+
 //
 //   FUNKCJA: InitInstance(HINSTANCE, int)
 //
@@ -116,7 +135,30 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
       return FALSE;
    }
+   SetTimer(hWnd, 1, 1000, NULL);
+   for (int f = 0; f < 5; f++) {
+       for (int button_i = 5; button_i > 0; button_i--){
 
+           int floor = abs(f - 5);
+           if (floor == button_i) continue;
+           wchar_t buffer[256];
+           wsprintfW(buffer, L"%d", button_i);
+           HWND hwndButton = CreateWindow(
+               L"BUTTON",  // Predefined class; Unicode assumed 
+               buffer,      // Button text 
+               WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
+               10 + (f % 2) * 900,         // x position 
+               200 +(f / 2) * 300 - button_i * 20 +(f%2)*150,         // y position 
+               20,        // Button width
+               20,        // Button height
+               hWnd,     // Parent window
+               (HMENU)(floor*10+button_i), //first digit origin, second digit destination
+               (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE),
+               NULL);      // Pointer not needed.
+       }
+       
+   }
+   
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
