@@ -230,10 +230,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             switch (PressedButton)
             {
             case (2):
-                elevator.DrawLine(&red, eCoord[0], eCoord[2]-150, eCoord[1], eCoord[2] - 150);  
-                elevator.DrawLine(&red, eCoord[0], eCoord[3] - 150, eCoord[1], eCoord[3] - 150);  
-                elevator.DrawLine(&red, eCoord[0], eCoord[2] - 150, eCoord[0], eCoord[3] - 150);  
-                elevator.DrawLine(&red, eCoord[1], eCoord[2] - 150, eCoord[1], eCoord[3] - 150);  
+                for (int i = 0, i <= 150, i++) {
+                    elevator.DrawLine(&red, eCoord[0], eCoord[2] - i, eCoord[1], eCoord[2] - i);
+                    elevator.DrawLine(&red, eCoord[0], eCoord[3] - i, eCoord[1], eCoord[3] - i);
+                    elevator.DrawLine(&red, eCoord[0], eCoord[2] - i, eCoord[0], eCoord[3] - i);
+                    elevator.DrawLine(&red, eCoord[1], eCoord[2] - i, eCoord[1], eCoord[3] - i);
+                }  
                 break;
             case 3:
                 elevator.DrawLine(&red, eCoord[0], eCoord[2] - 300, eCoord[1], eCoord[2] - 300);  
