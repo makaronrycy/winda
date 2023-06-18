@@ -7,6 +7,11 @@
 #define MAX_LOADSTRING 100
 #define FLOOR 4
 
+const int ELEVATOR_LEFT = 400;
+const int ELEVATOR_RIGHT = 600;
+const int ELEVATOR_TOP = 650;
+const int ELEVATOR_BOTTOM = 800;
+
 // Zmienne globalne:
 HINSTANCE hInst;                                // bieżące wystąpienie
 WCHAR szTitle[MAX_LOADSTRING];                  // Tekst paska tytułu
@@ -179,7 +184,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY  - opublikuj komunikat o wyjściu i wróć
 //
 //
+
 int PressedButton = 0;
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     
@@ -218,46 +225,41 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             Graphics elevator(hdc);
             Pen red(Color(255, 255, 0, 0), 5);
+            int eCoord[4] = { ELEVATOR_LEFT, ELEVATOR_RIGHT, ELEVATOR_BOTTOM, ELEVATOR_TOP };
 
             switch (PressedButton)
             {
             case (2):
-                elevator.DrawLine(&red, 400, 650, 600, 650);  // dolna czesc
-                elevator.DrawLine(&red, 400, 500, 600, 500);  // gorna czesc
-                elevator.DrawLine(&red, 400, 650, 400, 500);  // lewa czesc
-                elevator.DrawLine(&red, 600, 650, 600, 500);  // prawa czesc
+                elevator.DrawLine(&red, eCoord[0], eCoord[2]-150, eCoord[1], eCoord[2] - 150);  
+                elevator.DrawLine(&red, eCoord[0], eCoord[3] - 150, eCoord[1], eCoord[3] - 150);  
+                elevator.DrawLine(&red, eCoord[0], eCoord[2] - 150, eCoord[0], eCoord[3] - 150);  
+                elevator.DrawLine(&red, eCoord[1], eCoord[2] - 150, eCoord[1], eCoord[3] - 150);  
                 break;
             case 3:
-                elevator.DrawLine(&red, 400, 500, 600, 500);  // dolna czesc
-                elevator.DrawLine(&red, 400, 350, 600, 350);  // gorna czesc
-                elevator.DrawLine(&red, 400, 500, 400, 350);  // lewa czesc
-                elevator.DrawLine(&red, 600, 500, 600, 350);  // prawa czesc
+                elevator.DrawLine(&red, eCoord[0], eCoord[2] - 300, eCoord[1], eCoord[2] - 300);  
+                elevator.DrawLine(&red, eCoord[0], eCoord[3] - 300, eCoord[1], eCoord[3] - 300);  
+                elevator.DrawLine(&red, eCoord[0], eCoord[2] - 300, eCoord[0], eCoord[3] - 300);  
+                elevator.DrawLine(&red, eCoord[1], eCoord[2] - 300, eCoord[1], eCoord[3] - 300);  
                 break;
             case 4:
-                elevator.DrawLine(&red, 400, 350, 600, 350);  // dolna czesc
-                elevator.DrawLine(&red, 400, 200, 600, 200);  // gorna czesc
-                elevator.DrawLine(&red, 400, 350, 400, 200);  // lewa czesc
-                elevator.DrawLine(&red, 600, 350, 600, 200);  // prawa czesc
+                elevator.DrawLine(&red, eCoord[0], eCoord[2] - 450, eCoord[1], eCoord[2] - 450);  
+                elevator.DrawLine(&red, eCoord[0], eCoord[3] - 450, eCoord[1], eCoord[3] - 450);  
+                elevator.DrawLine(&red, eCoord[0], eCoord[2] - 450, eCoord[0], eCoord[3] - 450);  
+                elevator.DrawLine(&red, eCoord[1], eCoord[2] - 450, eCoord[1], eCoord[3] - 450);  
                 break;
             case 5:
-                elevator.DrawLine(&red, 400, 200, 600, 200);  // dolna czesc
-                elevator.DrawLine(&red, 400, 50, 600, 50);  // gorna czesc
-                elevator.DrawLine(&red, 400, 200, 400, 50);  // lewa czesc
-                elevator.DrawLine(&red, 600, 200, 600, 50);  // prawa czesc
+                elevator.DrawLine(&red, eCoord[0], eCoord[2] - 600, eCoord[1], eCoord[2] - 600);  // dolna czesc
+                elevator.DrawLine(&red, eCoord[0], eCoord[3] - 600, eCoord[1], eCoord[3] - 600);  // gorna czesc
+                elevator.DrawLine(&red, eCoord[0], eCoord[2] - 600, eCoord[0], eCoord[3] - 600);  // lewa czesc
+                elevator.DrawLine(&red, eCoord[1], eCoord[2] - 600, eCoord[1], eCoord[3] - 600);  // prawa czesc
                 break;
             default:
-                elevator.DrawLine(&red, 400, 800, 600, 800);  // dolna czesc
-                elevator.DrawLine(&red, 400, 650, 600, 650);  // gorna czesc
-                elevator.DrawLine(&red, 400, 800, 400, 650);  // lewa czesc
-                elevator.DrawLine(&red, 600, 800, 600, 650);  // prawa czesc
+                elevator.DrawLine(&red, eCoord[0], eCoord[2], eCoord[1], eCoord[2]); 
+                elevator.DrawLine(&red, eCoord[0], eCoord[3], eCoord[1], eCoord[3]);  
+                elevator.DrawLine(&red, eCoord[0], eCoord[2], eCoord[0], eCoord[3]);  
+                elevator.DrawLine(&red, eCoord[1], eCoord[2], eCoord[1], eCoord[3]);  
                 break;
             }
-
-            //elevator.DrawLine(&red, 400, 800, 600, 800);  // dolna czesc
-            //elevator.DrawLine(&red, 400, 650, 600, 650);  // gorna czesc
-            //elevator.DrawLine(&red, 400, 800, 400, 650);  // lewa czesc
-            //elevator.DrawLine(&red, 600, 800, 600, 650);  // prawa czesc
-            //
 
 
             PaintScenery(hdc);
