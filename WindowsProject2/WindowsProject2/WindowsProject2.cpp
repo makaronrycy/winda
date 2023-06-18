@@ -18,6 +18,8 @@ BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
+const int interval;
+
 class Elevator {
     int floor;
 private:
@@ -30,7 +32,9 @@ public:
     int weight;
 
 };
-
+void ButtonPress(int button_id,HWND hWnd) {
+    InvalidateRect(hWnd, NULL, TRUE);
+}
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -84,8 +88,9 @@ void PaintScenery(HDC hdc)
             graphics.DrawLine(&pen, 0, 200 + 150 * f, 400, 200 + 150 * f);
         }
     }
-    
-    TextOut(hdc, 0, 0, L"masa:",5);
+    wchar_t buffer[256];
+    wsprintfW(buffer, L"%d", GetTickCount64());
+    TextOut(hdc, 0, 0, buffer, 8);
 }
 //
 //  FUNKCJA: MyRegisterClass()
@@ -156,10 +161,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
                (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE),
                NULL);      // Pointer not needed.
        }
-       
    }
-   
-   ShowWindow(hWnd, nCmdShow);
+   ShowWindow(hWnd, 3);
    UpdateWindow(hWnd);
 
    return TRUE;
@@ -177,11 +180,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    static int lastActive;
     switch (message)
     {
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
+            
+            for (int i = 12; i < 55; i++) {
+                if (wmId == i) ButtonPress(wmId, hWnd);
+            }
             // Analizuj zaznaczenia menu:
             switch (wmId)
             {
@@ -193,12 +201,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
+            
+            }
+        }
+        break;
+    case WM_TIMER: {
+        if (GetTickCount64() - lastActive >= interval) {
+            break;
             }
         }
         break;
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
+
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Tutaj dodaj kod rysujący używający elementu hdc...
             PaintScenery(hdc);
