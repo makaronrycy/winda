@@ -200,7 +200,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
+            
             // TODO: Tutaj dodaj kod rysujący używający elementu hdc...
+
+            Graphics elevator(hdc);
+            Pen red(Color(255, 255, 0, 0), 5);
+
+            elevator.DrawLine(&red, 400, 800, 600, 800);  // dolna czesc
+            elevator.DrawLine(&red, 400, 650, 600, 650);  // gorna czesc
+            elevator.DrawLine(&red, 400, 800, 400, 650);  // lewa czesc
+            elevator.DrawLine(&red, 600, 800, 600, 650);  // lewa czesc
+           
             PaintScenery(hdc);
             EndPaint(hWnd, &ps);
         }
