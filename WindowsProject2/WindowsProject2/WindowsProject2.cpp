@@ -30,6 +30,9 @@ public:
     int weight;
 
 };
+void ButtonPress(int button_id,HWND hWnd) {
+    InvalidateRect(hWnd, NULL, TRUE);
+}
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -84,8 +87,9 @@ void PaintScenery(HDC hdc)
             graphics.DrawLine(&pen, 0, 200 + 150 * f, 400, 200 + 150 * f);
         }
     }
-    
-    TextOut(hdc, 0, 0, L"masa:",5);
+    wchar_t buffer[256];
+    wsprintfW(buffer, L"%d", GetTickCount64());
+    TextOut(hdc, 0, 0, buffer, 8);
 }
 //
 //  FUNKCJA: MyRegisterClass()
@@ -175,13 +179,22 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY  - opublikuj komunikat o wyjściu i wróć
 //
 //
+int PressedButton = 0;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    
     switch (message)
     {
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
+
+
+            for (int i = 12; i < 55; i++) {
+                if (wmId == i) ButtonPress(wmId, hWnd);
+                PressedButton = wmId%10;
+            }
+
             // Analizuj zaznaczenia menu:
             switch (wmId)
             {
@@ -206,11 +219,47 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             Graphics elevator(hdc);
             Pen red(Color(255, 255, 0, 0), 5);
 
-            elevator.DrawLine(&red, 400, 800, 600, 800);  // dolna czesc
-            elevator.DrawLine(&red, 400, 650, 600, 650);  // gorna czesc
-            elevator.DrawLine(&red, 400, 800, 400, 650);  // lewa czesc
-            elevator.DrawLine(&red, 600, 800, 600, 650);  // lewa czesc
-           
+            switch (PressedButton)
+            {
+            case (2):
+                elevator.DrawLine(&red, 400, 650, 600, 650);  // dolna czesc
+                elevator.DrawLine(&red, 400, 500, 600, 500);  // gorna czesc
+                elevator.DrawLine(&red, 400, 650, 400, 500);  // lewa czesc
+                elevator.DrawLine(&red, 600, 650, 600, 500);  // prawa czesc
+                break;
+            case 3:
+                elevator.DrawLine(&red, 400, 500, 600, 500);  // dolna czesc
+                elevator.DrawLine(&red, 400, 350, 600, 350);  // gorna czesc
+                elevator.DrawLine(&red, 400, 500, 400, 350);  // lewa czesc
+                elevator.DrawLine(&red, 600, 500, 600, 350);  // prawa czesc
+                break;
+            case 4:
+                elevator.DrawLine(&red, 400, 350, 600, 350);  // dolna czesc
+                elevator.DrawLine(&red, 400, 200, 600, 200);  // gorna czesc
+                elevator.DrawLine(&red, 400, 350, 400, 200);  // lewa czesc
+                elevator.DrawLine(&red, 600, 350, 600, 200);  // prawa czesc
+                break;
+            case 5:
+                elevator.DrawLine(&red, 400, 200, 600, 200);  // dolna czesc
+                elevator.DrawLine(&red, 400, 50, 600, 50);  // gorna czesc
+                elevator.DrawLine(&red, 400, 200, 400, 50);  // lewa czesc
+                elevator.DrawLine(&red, 600, 200, 600, 50);  // prawa czesc
+                break;
+            default:
+                elevator.DrawLine(&red, 400, 800, 600, 800);  // dolna czesc
+                elevator.DrawLine(&red, 400, 650, 600, 650);  // gorna czesc
+                elevator.DrawLine(&red, 400, 800, 400, 650);  // lewa czesc
+                elevator.DrawLine(&red, 600, 800, 600, 650);  // prawa czesc
+                break;
+            }
+
+            //elevator.DrawLine(&red, 400, 800, 600, 800);  // dolna czesc
+            //elevator.DrawLine(&red, 400, 650, 600, 650);  // gorna czesc
+            //elevator.DrawLine(&red, 400, 800, 400, 650);  // lewa czesc
+            //elevator.DrawLine(&red, 600, 800, 600, 650);  // prawa czesc
+            //
+
+
             PaintScenery(hdc);
             EndPaint(hWnd, &ps);
         }
