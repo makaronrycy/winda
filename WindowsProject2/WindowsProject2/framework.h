@@ -17,3 +17,6 @@
 
 #pragma comment(lib,"gdiplus.lib")
 using namespace Gdiplus;
+
+// Własne pliki nagłówkowe
+#include "elevator.h"

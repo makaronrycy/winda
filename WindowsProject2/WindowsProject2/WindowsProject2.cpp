@@ -7,10 +7,24 @@
 #define MAX_LOADSTRING 100
 #define FLOOR 4
 
+
+const int ELEVATOR_LEFT = 400;
+const int ELEVATOR_RIGHT = 600;
+const int ELEVATOR_TOP = 650;
+const int ELEVATOR_BOTTOM = 800;
+
+class Person {
+public:
+    int weight;
+
+};
+
+
 // Zmienne globalne:
 HINSTANCE hInst;                                // bieżące wystąpienie
 WCHAR szTitle[MAX_LOADSTRING];                  // Tekst paska tytułu
 WCHAR szWindowClass[MAX_LOADSTRING];            // nazwa klasy okna głównego
+Elevator elevatorInst;
 
 // Przekaż dalej deklaracje funkcji dołączone w tym module kodu:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -18,22 +32,12 @@ BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
-const int interval;
+const ULONGLONG interval = 10;
 
-class Elevator {
-    int floor;
-private:
-    int max_weight;
-    
-
-};
-class Person {
-public:
-    int weight;
-
-};
-void ButtonPress(int button_id,HWND hWnd) {
-    InvalidateRect(hWnd, NULL, TRUE);
+void ButtonPress(int button_id, HWND hWnd) {
+    elevatorInst.dest = button_id % 10 - 1;
+    elevatorInst.origin = button_id / 10 - 1;
+    ValidateRect(hWnd, NULL);
 }
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -80,6 +84,7 @@ void PaintScenery(HDC hdc)
 {
     Graphics graphics(hdc);
     Pen pen(Color(255, 0, 0, 0),5);
+    Pen red(Color(255, 255, 0, 0), 5);
     for (int f = 0; f < 5; f++) {
         if (f % 2) {
             graphics.DrawLine(&pen, 600, 200 + 150 * f, 1000, 200 + 150 * f);
@@ -88,6 +93,13 @@ void PaintScenery(HDC hdc)
             graphics.DrawLine(&pen, 0, 200 + 150 * f, 400, 200 + 150 * f);
         }
     }
+    int eCoord[4] = { ELEVATOR_LEFT, ELEVATOR_RIGHT, ELEVATOR_BOTTOM, ELEVATOR_TOP };
+    int offset_y = elevatorInst.GetPositionY();
+    graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y);
+    graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
+    graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y);
+    graphics.DrawLine(&red, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
+
     wchar_t buffer[256];
     wsprintfW(buffer, L"%d", GetTickCount64());
     TextOut(hdc, 0, 0, buffer, 8);
@@ -133,21 +145,21 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Przechowuj dojście wystąpienia w naszej zmiennej globalnej
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
-   if (!hWnd)
-   {
-      return FALSE;
-   }
-   SetTimer(hWnd, 1, 1000, NULL);
-   for (int f = 0; f < 5; f++) {
-       for (int button_i = 5; button_i > 0; button_i--){
+    if (!hWnd)
+    {
+        return FALSE;
+    }
+    SetTimer(hWnd, 1, 33, NULL);
+    for (int f = 0; f < 5; f++) {
+        for (int button_i = 5; button_i > 0; button_i--) {
 
            int floor = abs(f - 5);
            if (floor == button_i) continue;
            wchar_t buffer[256];
-           wsprintfW(buffer, L"%d", button_i);
+           wsprintfW(buffer, L"%d", button_i-1);
            HWND hwndButton = CreateWindow(
                L"BUTTON",  // Predefined class; Unicode assumed 
                buffer,      // Button text 
@@ -178,9 +190,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY  - opublikuj komunikat o wyjściu i wróć
 //
 //
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    static int lastActive;
     switch (message)
     {
     case WM_COMMAND:
@@ -189,6 +201,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             
             for (int i = 12; i < 55; i++) {
                 if (wmId == i) ButtonPress(wmId, hWnd);
+
             }
             // Analizuj zaznaczenia menu:
             switch (wmId)
@@ -206,21 +219,52 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_TIMER: {
-        if (GetTickCount64() - lastActive >= interval) {
-            break;
-            }
-        }
-        break;
+        if (elevatorInst.floor == elevatorInst.dest) break;
+        int y = elevatorInst.GetPositionY();
+        if (y < elevatorInst.dest * 150) elevatorInst.SetPositionY(y + 2);
+        else if (y > elevatorInst.dest * 150)elevatorInst.SetPositionY(y - 2);
+        else elevatorInst.floor = elevatorInst.dest;
+        InvalidateRect(hWnd, NULL, TRUE);
+        return 0;
+    }
+    break;
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
-
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Tutaj dodaj kod rysujący używający elementu hdc...
-            PaintScenery(hdc);
+            // create memory DC and memory bitmap where we shall do our drawing
+
+            HDC memDC = CreateCompatibleDC(hdc);
+
+            // get window's client rectangle. We need this for bitmap creation.
+            RECT rcClientRect;
+            GetClientRect(hWnd, &rcClientRect);
+
+            // now we can create bitmap where we shall do our drawing
+            HBITMAP bmp = CreateCompatibleBitmap(hdc,
+                rcClientRect.right - rcClientRect.left,
+                rcClientRect.bottom - rcClientRect.top);
+
+            // we need to save original bitmap, and select it back when we are done,
+            // in order to avoid GDI leaks!
+            HBITMAP oldBmp = (HBITMAP)SelectObject(memDC, bmp);
+            FillRect(memDC, &rcClientRect, (HBRUSH)(COLOR_WINDOW + 1));
+            PaintScenery(memDC);
+            BitBlt(hdc, 0, 0, rcClientRect.right - rcClientRect.left,
+                rcClientRect.bottom - rcClientRect.top, memDC, 0, 0, SRCCOPY);
+
+            // all done, now we need to cleanup
+            SelectObject(memDC, oldBmp); // select back original bitmap
+            DeleteObject(bmp); // delete bitmap since it is no longer required
+            DeleteDC(memDC);   // delete memory DC since it is no longer required
+
             EndPaint(hWnd, &ps);
         }
         break;
+    case WM_ERASEBKGND:
+        return 1;
+        //return DefWindowProc(hWnd, message, wParam, lParam);
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
