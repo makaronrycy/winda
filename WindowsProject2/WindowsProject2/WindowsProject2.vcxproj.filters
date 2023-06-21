@@ -48,5 +48,8 @@
     <Image Include="WindowsProject2.ico">
       <Filter>Pliki zasobów</Filter>
     </Image>
+    <Image Include="person.png">
+      <Filter>Pliki zasobów</Filter>
+    </Image>
   </ItemGroup>
 </Project>

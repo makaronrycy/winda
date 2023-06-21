@@ -152,6 +152,7 @@
     <ResourceCompile Include="WindowsProject2.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="person.png" />
     <Image Include="small.ico" />
     <Image Include="WindowsProject2.ico" />
   </ItemGroup>

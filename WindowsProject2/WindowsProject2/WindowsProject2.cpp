@@ -5,7 +5,6 @@
 #include "WindowsProject2.h"
 
 #define MAX_LOADSTRING 100
-#define FLOOR 4
 
 
 const int ELEVATOR_LEFT = 400;
@@ -13,10 +12,22 @@ const int ELEVATOR_RIGHT = 600;
 const int ELEVATOR_TOP = 650;
 const int ELEVATOR_BOTTOM = 800;
 
+
 class Person {
 public:
     int weight;
-
+    int x;
+    int y;
+    int origin;
+    int destination;
+    Person(int dest, int org, int x, int y) {
+        this->weight = 70;
+        this->destination = dest;
+        this->origin = org;
+        this->x = x;
+        this->y = y;
+    }
+    
 };
 
 
@@ -25,18 +36,24 @@ HINSTANCE hInst;                                // bieżące wystąpienie
 WCHAR szTitle[MAX_LOADSTRING];                  // Tekst paska tytułu
 WCHAR szWindowClass[MAX_LOADSTRING];            // nazwa klasy okna głównego
 Elevator elevatorInst;
-
+std::vector<Person> PeepsWaiting;
 // Przekaż dalej deklaracje funkcji dołączone w tym module kodu:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
-const ULONGLONG interval = 10;
+const ULONGLONG interval = 33;
 
 void ButtonPress(int button_id, HWND hWnd) {
-    elevatorInst.dest = button_id % 10 - 1;
-    elevatorInst.origin = button_id / 10 - 1;
+    int destination = button_id % 10;
+    int origin = button_id / 10;
+    int x = 20 + (origin % 2) * 900;
+    int y = ELEVATOR_BOTTOM-(origin / 2) *2* DISTANCE_BETWEEN_FLOORS - (origin % 2) * DISTANCE_BETWEEN_FLOORS - 132/2;
+    Person peep(destination,origin,x,y);
+    PeepsWaiting.push_back(peep);
+    elevatorInst.SetDestination(destination);
+    elevatorInst.SetOrigin(origin);
     ValidateRect(hWnd, NULL);
 }
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -87,21 +104,24 @@ void PaintScenery(HDC hdc)
     Pen red(Color(255, 255, 0, 0), 5);
     for (int f = 0; f < 5; f++) {
         if (f % 2) {
-            graphics.DrawLine(&pen, 600, 200 + 150 * f, 1000, 200 + 150 * f);
+            graphics.DrawLine(&pen, 600, 200 + DISTANCE_BETWEEN_FLOORS * f, 1000, 200 + DISTANCE_BETWEEN_FLOORS * f);
         }
         else {
-            graphics.DrawLine(&pen, 0, 200 + 150 * f, 400, 200 + 150 * f);
+            graphics.DrawLine(&pen, 0, 200 + DISTANCE_BETWEEN_FLOORS * f, 400, 200 + DISTANCE_BETWEEN_FLOORS * f);
         }
     }
-    int eCoord[4] = { ELEVATOR_LEFT, ELEVATOR_RIGHT, ELEVATOR_BOTTOM, ELEVATOR_TOP };
     int offset_y = elevatorInst.GetPositionY();
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y);
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y);
     graphics.DrawLine(&red, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
-
+    for (auto &peep : PeepsWaiting) {
+        Bitmap PersonImg(L"person.png");
+        Rect PersonSpace(peep.x, peep.y, PersonImg.GetWidth() / 2, PersonImg.GetHeight() / 2);
+        graphics.DrawImage(&PersonImg, PersonSpace);
+    }
     wchar_t buffer[256];
-    wsprintfW(buffer, L"%d", GetTickCount64());
+    wsprintfW(buffer, L"%d", (int)GetTickCount64());
     TextOut(hdc, 0, 0, buffer, 8);
 }
 //
@@ -152,20 +172,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     {
         return FALSE;
     }
-    SetTimer(hWnd, 1, 33, NULL);
-    for (int f = 0; f < 5; f++) {
-        for (int button_i = 5; button_i > 0; button_i--) {
+    SetTimer(hWnd, 1, interval, NULL);
+    for (int f = 0; f <= 4; f++) {
+        for (int button_i = 4; button_i >= 0; button_i--) {
 
-           int floor = abs(f - 5);
+           int floor = abs(f - 4);
            if (floor == button_i) continue;
            wchar_t buffer[256];
-           wsprintfW(buffer, L"%d", button_i-1);
+           wsprintfW(buffer, L"%d", button_i);
            HWND hwndButton = CreateWindow(
                L"BUTTON",  // Predefined class; Unicode assumed 
                buffer,      // Button text 
                WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
                10 + (f % 2) * 900,         // x position 
-               200 +(f / 2) * 300 - button_i * 20 +(f%2)*150,         // y position 
+               200 + (f / 2) * 2 * DISTANCE_BETWEEN_FLOORS - (button_i+2) * 20 +(f%2)* DISTANCE_BETWEEN_FLOORS,// y position 
                20,        // Button width
                20,        // Button height
                hWnd,     // Parent window
@@ -199,9 +219,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             int wmId = LOWORD(wParam);
             
-            for (int i = 12; i < 55; i++) {
+            for (int i = 0; i < 44; i++) {
                 if (wmId == i) ButtonPress(wmId, hWnd);
-
             }
             // Analizuj zaznaczenia menu:
             switch (wmId)
@@ -219,11 +238,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_TIMER: {
-        if (elevatorInst.floor == elevatorInst.dest) break;
-        int y = elevatorInst.GetPositionY();
-        if (y < elevatorInst.dest * 150) elevatorInst.SetPositionY(y + 2);
-        else if (y > elevatorInst.dest * 150)elevatorInst.SetPositionY(y - 2);
-        else elevatorInst.floor = elevatorInst.dest;
+        if (!elevatorInst.Movement()) break;
         InvalidateRect(hWnd, NULL, TRUE);
         return 0;
     }
@@ -243,14 +258,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             // now we can create bitmap where we shall do our drawing
             HBITMAP bmp = CreateCompatibleBitmap(hdc,
-                rcClientRect.right - rcClientRect.left,
-                rcClientRect.bottom - rcClientRect.top);
+            rcClientRect.right - rcClientRect.left,
+            rcClientRect.bottom - rcClientRect.top);
 
             // we need to save original bitmap, and select it back when we are done,
             // in order to avoid GDI leaks!
             HBITMAP oldBmp = (HBITMAP)SelectObject(memDC, bmp);
             FillRect(memDC, &rcClientRect, (HBRUSH)(COLOR_WINDOW + 1));
             PaintScenery(memDC);
+            
             BitBlt(hdc, 0, 0, rcClientRect.right - rcClientRect.left,
                 rcClientRect.bottom - rcClientRect.top, memDC, 0, 0, SRCCOPY);
 
@@ -258,7 +274,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             SelectObject(memDC, oldBmp); // select back original bitmap
             DeleteObject(bmp); // delete bitmap since it is no longer required
             DeleteDC(memDC);   // delete memory DC since it is no longer required
-
             EndPaint(hWnd, &ps);
         }
         break;
