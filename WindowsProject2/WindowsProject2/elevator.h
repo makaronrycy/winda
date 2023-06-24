@@ -10,7 +10,8 @@ public:
     int SetOrigin(int o);
     int GetFloor();
     bool Movement();
-    bool SetisAscending();
+    bool GetisAscending();
+    vector <int> GetQueue();
 private:
     int floor;
     int destination;
@@ -20,6 +21,7 @@ private:
     int velocity;
     int rel_pos_y;
     bool isAscending;
+    vector<int>queue;
 };
 Elevator::Elevator() {
     this->floor = 0;
@@ -30,6 +32,7 @@ Elevator::Elevator() {
     this->origin = 0;
     this->passenger_got = false;
     this->isAscending = true;
+    this->queue[0] = 0;
 }
 int Elevator::GetPositionY() {
     return rel_pos_y;
@@ -49,8 +52,18 @@ int Elevator::SetOrigin(int o) {
 int Elevator::GetFloor() {
     return floor;
 }
-bool Elevator::SetisAscending() {
-    return !isAscending;
+vector <int> Elevator::GetQueue() {
+    return queue;
+}
+
+bool Elevator::GetisAscending() {
+    if (floor == 5) {
+        isAscending = false;
+    }
+    if ((floor == 1) || (floor == 0)) {
+        isAscending = true;
+    }
+    return isAscending;
 }
 bool Elevator::Movement() {
     if (origin == destination) return false;

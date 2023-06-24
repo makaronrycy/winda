@@ -114,17 +114,21 @@ void PaintScenery(HDC hdc)
     
     // dodac wektor "kolejke" ktorego wierzcholek bedzie rowny offset_y i jesli jego floor == destination to sciaga wierzcholek ze wektora. vektor bedzie sortowany wedlug zasady, jesli isAscending == true to wszystkie destynacje powyzej aktualnego poziomu dostaja pierwszenstwo nad tymi ktore chca jechac w dol itd.
 
-    std::vector<int>queue;
-    queue.push_back(elevatorInst.GetPositionY());
+    vector<int>queueUsed = elevatorInst.GetQueue();
+    queueUsed.push_back(elevatorInst.GetPositionY());
+    if (elevatorInst.GetisAscending() == true) {
+        sort(queueUsed.begin(), queueUsed.end(), greater<int>());
+    } else sort(queueUsed.begin(), queueUsed.end());
+    
+    int offset_y = queueUsed[queueUsed.size()]; 
 
-    int offset_y = queue[0];
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y);
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y);
     graphics.DrawLine(&red, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
     
-    
-    
+    // if(elevatorInst.GetPositionY() == [.....vector destynacji.....] {queueUsed.pop_back();}
+    elevatorInst.GetQueue().swap(queueUsed);
         
         
         
