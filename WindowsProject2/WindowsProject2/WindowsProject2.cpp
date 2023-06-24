@@ -114,15 +114,7 @@ void PaintScenery(HDC hdc)
     
     // dodac wektor "kolejke" ktorego wierzcholek bedzie rowny offset_y i jesli jego floor == destination to sciaga wierzcholek ze wektora. vektor bedzie sortowany wedlug zasady, jesli isAscending == true to wszystkie destynacje powyzej aktualnego poziomu dostaja pierwszenstwo nad tymi ktore chca jechac w dol itd.
 
-    /* vector<int>queueUsed = elevatorInst.GetQueue();
-     queueUsed.push_back(elevatorInst.GetPositionY());
-    if (elevatorInst.GetisAscending() == true) {
-        sort(queueUsed.begin(), queueUsed.end(), greater<int>());
-    } else sort(queueUsed.begin(), queueUsed.end());*/
-    
-
-
-    vector<int>queue = elevatorInst.GetQueue();
+    /*vector<int>queue = elevatorInst.GetQueue();
     queue.push_back(elevatorInst.GetDestination());
     if (elevatorInst.GetisAscending() == true) {
         sort(queue.begin(), queue.end(), greater<int>());
@@ -130,22 +122,16 @@ void PaintScenery(HDC hdc)
     else sort(queue.begin(), queue.end());
 
 
-    elevatorInst.SetDestination(queue[queue.size()-1]);
+    elevatorInst.SetDestination(queue[queue.size()-1]);*/
 
-
-
-    int offset_y = elevatorInst.GetPositionY();    //queueUsed[0];
+    int offset_y = elevatorInst.GetPositionY();    
 
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y);
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y);
     graphics.DrawLine(&red, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
     
-    // if(elevatorInst.GetPositionY() == [.....vector destynacji.....] {queueUsed.pop_back();}
-    // elevatorInst.GetQueue().swap(queue);
-      
-    
-    if (elevatorInst.GetDestination() == elevatorInst.GetFloor()) {
+    /*if (elevatorInst.GetDestination() == elevatorInst.GetFloor()) {
         int i = queue.size();
         while ((queue[i-1] == elevatorInst.GetFloor()) && (i>1)) {
             queue.pop_back();
@@ -153,7 +139,7 @@ void PaintScenery(HDC hdc)
         }
     }
 
-    elevatorInst.SetQueue(queue);
+    elevatorInst.SetQueue(queue);*/
 
 
 
