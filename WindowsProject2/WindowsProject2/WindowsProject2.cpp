@@ -102,6 +102,7 @@ void PaintScenery(HDC hdc)
     Graphics graphics(hdc);
     Pen pen(Color(255, 0, 0, 0),5);
     Pen red(Color(255, 255, 0, 0), 5);
+    
     for (int f = 0; f < 5; f++) {
         if (f % 2) {
             graphics.DrawLine(&pen, 600, 200 + DISTANCE_BETWEEN_FLOORS * f, 1000, 200 + DISTANCE_BETWEEN_FLOORS * f);
@@ -110,11 +111,23 @@ void PaintScenery(HDC hdc)
             graphics.DrawLine(&pen, 0, 200 + DISTANCE_BETWEEN_FLOORS * f, 400, 200 + DISTANCE_BETWEEN_FLOORS * f);
         }
     }
-    int offset_y = elevatorInst.GetPositionY();
+    
+    // dodac stos "kolejke" ktorego wierzcholek bedzie rowny offset_y i jesli jego floor == destination to sciaga wierzcholek ze stosu. Stos bedzie sortowany wedlug zasady, jesli isAscending == true to wszystkie destynacje powyzej aktualnego poziomu dostaja pierwszenstwo nad tymi ktore chca jechac w dol itd.
+
+    std::vector<int>queue;
+    queue.push_back(elevatorInst.GetPositionY());
+
+    int offset_y = queue[0];
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y);
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y);
     graphics.DrawLine(&red, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
+    
+    
+    
+        
+        
+        
     for (auto &peep : PeepsWaiting) {
         Bitmap PersonImg(L"person.png");
         Rect PersonSpace(peep.x, peep.y, PersonImg.GetWidth() / 2, PersonImg.GetHeight() / 2);

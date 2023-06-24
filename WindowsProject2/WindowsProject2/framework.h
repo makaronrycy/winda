@@ -15,6 +15,7 @@
 #include <tchar.h>
 #include <gdiplus.h>
 #include <vector>
+#include <stack>
 #pragma comment(lib,"gdiplus.lib")
 using namespace Gdiplus;
 

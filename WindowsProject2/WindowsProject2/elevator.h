@@ -10,6 +10,7 @@ public:
     int SetOrigin(int o);
     int GetFloor();
     bool Movement();
+    bool SetisAscending();
 private:
     int floor;
     int destination;
@@ -18,6 +19,7 @@ private:
     int max_weight;
     int velocity;
     int rel_pos_y;
+    bool isAscending;
 };
 Elevator::Elevator() {
     this->floor = 0;
@@ -27,6 +29,7 @@ Elevator::Elevator() {
     this->destination = 0;
     this->origin = 0;
     this->passenger_got = false;
+    this->isAscending = true;
 }
 int Elevator::GetPositionY() {
     return rel_pos_y;
@@ -45,6 +48,9 @@ int Elevator::SetOrigin(int o) {
 }
 int Elevator::GetFloor() {
     return floor;
+}
+bool Elevator::SetisAscending() {
+    return !isAscending;
 }
 bool Elevator::Movement() {
     if (origin == destination) return false;
