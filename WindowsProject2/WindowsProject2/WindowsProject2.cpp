@@ -13,22 +13,7 @@ const int ELEVATOR_TOP = 650;
 const int ELEVATOR_BOTTOM = 800;
 
 
-class Person {
-public:
-    int weight;
-    int x;
-    int y;
-    int origin;
-    int destination;
-    Person(int dest, int org, int x, int y) {
-        this->weight = 70;
-        this->destination = dest;
-        this->origin = org;
-        this->x = x;
-        this->y = y;
-    }
-    
-};
+
 
 
 // Zmienne globalne:
@@ -36,7 +21,7 @@ HINSTANCE hInst;                                // bieżące wystąpienie
 WCHAR szTitle[MAX_LOADSTRING];                  // Tekst paska tytułu
 WCHAR szWindowClass[MAX_LOADSTRING];            // nazwa klasy okna głównego
 Elevator elevatorInst;
-std::vector<Person> PeepsWaiting;
+std::vector<Person> floorQueue[5];
 // Przekaż dalej deklaracje funkcji dołączone w tym module kodu:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -48,12 +33,12 @@ const ULONGLONG interval = 33;
 void ButtonPress(int button_id, HWND hWnd) {
     int destination = button_id % 10;
     int origin = button_id / 10;
-    int x = 20 + (origin % 2) * 900;
+    int x = 20*floorQueue[origin].size() + (origin % 2) * 900;
     int y = ELEVATOR_BOTTOM-(origin / 2) *2* DISTANCE_BETWEEN_FLOORS - (origin % 2) * DISTANCE_BETWEEN_FLOORS - 132/2;
-    Person peep(destination,origin,x,y);
-    PeepsWaiting.push_back(peep);
-    elevatorInst.SetDestination(destination);
-    elevatorInst.SetOrigin(origin);
+    Person person(destination,origin,x,y);
+    floorQueue[origin].push_back(person);
+    elevatorInst.addToQueue(person);
+    elevatorInst.requestHandler(floorQueue);
     ValidateRect(hWnd, NULL);
 }
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -114,38 +99,22 @@ void PaintScenery(HDC hdc)
     
     // dodac wektor "kolejke" ktorego wierzcholek bedzie rowny offset_y i jesli jego floor == destination to sciaga wierzcholek ze wektora. vektor bedzie sortowany wedlug zasady, jesli isAscending == true to wszystkie destynacje powyzej aktualnego poziomu dostaja pierwszenstwo nad tymi ktore chca jechac w dol itd.
 
-    /*vector<int>queue = elevatorInst.GetQueue();
-    queue.push_back(elevatorInst.GetDestination());
-    if (elevatorInst.GetisAscending() == true) {
-        sort(queue.begin(), queue.end(), greater<int>());
-    }
-    else sort(queue.begin(), queue.end());
-
-
-    elevatorInst.SetDestination(queue[queue.size()-1]);*/
 
     int offset_y = elevatorInst.GetPositionY();    
-
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y);
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y);
     graphics.DrawLine(&red, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
-    
-    /*if (elevatorInst.GetDestination() == elevatorInst.GetFloor()) {
-        int i = queue.size();
-        while ((queue[i-1] == elevatorInst.GetFloor()) && (i>1)) {
-            queue.pop_back();
-            i--;
+
+    for (int i = 0; i < 5; i++) {
+        for (auto& peep : floorQueue[i]) {
+            Bitmap PersonImg(L"person.png");
+            Rect PersonSpace(peep.x, peep.y, PersonImg.GetWidth() / 2, PersonImg.GetHeight() / 2);
+            graphics.DrawImage(&PersonImg, PersonSpace);
         }
     }
-
-    elevatorInst.SetQueue(queue);*/
-
-
-
-        
-        
-    for (auto &peep : PeepsWaiting) {
+    
+    for (auto& peep : elevatorInst.peopleInElevator) {
         Bitmap PersonImg(L"person.png");
         Rect PersonSpace(peep.x, peep.y, PersonImg.GetWidth() / 2, PersonImg.GetHeight() / 2);
         graphics.DrawImage(&PersonImg, PersonSpace);
@@ -268,7 +237,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_TIMER: {
-        if (!elevatorInst.Movement()) break;
+        elevatorInst.Movement(floorQueue);
         InvalidateRect(hWnd, NULL, TRUE);
         return 0;
     }
