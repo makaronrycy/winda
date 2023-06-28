@@ -13,22 +13,7 @@ const int ELEVATOR_TOP = 650;
 const int ELEVATOR_BOTTOM = 800;
 
 
-class Person {
-public:
-    int weight;
-    int x;
-    int y;
-    int origin;
-    int destination;
-    Person(int dest, int org, int x, int y) {
-        this->weight = 70;
-        this->destination = dest;
-        this->origin = org;
-        this->x = x;
-        this->y = y;
-    }
-    
-};
+
 
 
 // Zmienne globalne:
@@ -36,24 +21,23 @@ HINSTANCE hInst;                                // bieżące wystąpienie
 WCHAR szTitle[MAX_LOADSTRING];                  // Tekst paska tytułu
 WCHAR szWindowClass[MAX_LOADSTRING];            // nazwa klasy okna głównego
 Elevator elevatorInst;
-std::vector<Person> PeepsWaiting;
+std::vector<Person> floorQueue[5];
 // Przekaż dalej deklaracje funkcji dołączone w tym module kodu:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
-const ULONGLONG interval = 33;
+const ULONGLONG interval = 10;
 
 void ButtonPress(int button_id, HWND hWnd) {
     int destination = button_id % 10;
     int origin = button_id / 10;
-    int x = 20 + (origin % 2) * 900;
+    int x = 20*floorQueue[origin].size() + (origin % 2) * 900;
     int y = ELEVATOR_BOTTOM-(origin / 2) *2* DISTANCE_BETWEEN_FLOORS - (origin % 2) * DISTANCE_BETWEEN_FLOORS - 132/2;
-    Person peep(destination,origin,x,y);
-    PeepsWaiting.push_back(peep);
-    elevatorInst.SetDestination(destination);
-    elevatorInst.SetOrigin(origin);
+    Person person(destination,origin,x,y);
+    floorQueue[origin].push_back(person);
+    elevatorInst.addToQueue(origin);
     ValidateRect(hWnd, NULL);
 }
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -102,6 +86,7 @@ void PaintScenery(HDC hdc)
     Graphics graphics(hdc);
     Pen pen(Color(255, 0, 0, 0),5);
     Pen red(Color(255, 255, 0, 0), 5);
+    
     for (int f = 0; f < 5; f++) {
         if (f % 2) {
             graphics.DrawLine(&pen, 600, 200 + DISTANCE_BETWEEN_FLOORS * f, 1000, 200 + DISTANCE_BETWEEN_FLOORS * f);
@@ -110,19 +95,39 @@ void PaintScenery(HDC hdc)
             graphics.DrawLine(&pen, 0, 200 + DISTANCE_BETWEEN_FLOORS * f, 400, 200 + DISTANCE_BETWEEN_FLOORS * f);
         }
     }
-    int offset_y = elevatorInst.GetPositionY();
+    
+    // dodac wektor "kolejke" ktorego wierzcholek bedzie rowny offset_y i jesli jego floor == destination to sciaga wierzcholek ze wektora. vektor bedzie sortowany wedlug zasady, jesli isAscending == true to wszystkie destynacje powyzej aktualnego poziomu dostaja pierwszenstwo nad tymi ktore chca jechac w dol itd.
+
+
+    int offset_y = elevatorInst.GetPositionY();    
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y);
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
     graphics.DrawLine(&red, ELEVATOR_LEFT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_LEFT, ELEVATOR_TOP - offset_y);
     graphics.DrawLine(&red, ELEVATOR_RIGHT, ELEVATOR_BOTTOM - offset_y, ELEVATOR_RIGHT, ELEVATOR_TOP - offset_y);
-    for (auto &peep : PeepsWaiting) {
+
+    for (int i = 0; i < 5; i++) {
+        for (auto& peep : floorQueue[i]) {
+            Bitmap PersonImg(L"person.png");
+            Rect PersonSpace(peep.x, peep.y, PersonImg.GetWidth() / 2, PersonImg.GetHeight() / 2);
+            graphics.DrawImage(&PersonImg, PersonSpace);
+        }
+    }
+    
+    for (auto& peep : elevatorInst.peopleInElevator) {
         Bitmap PersonImg(L"person.png");
         Rect PersonSpace(peep.x, peep.y, PersonImg.GetWidth() / 2, PersonImg.GetHeight() / 2);
         graphics.DrawImage(&PersonImg, PersonSpace);
     }
+    TextOut(hdc, 0, 0, L"Aktualna Waga:", 14);
+
     wchar_t buffer[256];
-    wsprintfW(buffer, L"%d", (int)GetTickCount64());
-    TextOut(hdc, 0, 0, buffer, 8);
+    int weight = elevatorInst.GetWeight();
+    if (!weight) TextOut(hdc, 105, 0, L"0", 1);
+    else {
+        wsprintfW(buffer, L"%d", weight);
+        int digits = floor(log10(weight) + 1) + 1;
+        TextOut(hdc, 105, 0, buffer, digits);
+    }
 }
 //
 //  FUNKCJA: MyRegisterClass()
@@ -194,6 +199,19 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
                NULL);      // Pointer not needed.
        }
    }
+    HWND hwndButton = CreateWindow(
+        L"BUTTON",  // Predefined class; Unicode assumed 
+        L"RESET",      // Button text 
+        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
+        200,         // x position 
+        0,// y position 
+        50,        // Button width
+        20,        // Button height
+        hWnd,     // Parent window
+        (HMENU)ID_RESET, //first digit origin, second digit destination
+        (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE),
+        NULL);      // Pointer not needed.
+
    ShowWindow(hWnd, 3);
    UpdateWindow(hWnd);
 
@@ -213,6 +231,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    static ULONGLONG lastActivity = GetTickCount64();
     switch (message)
     {
     case WM_COMMAND:
@@ -231,15 +250,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case IDM_EXIT:
                 DestroyWindow(hWnd);
                 break;
+            case ID_RESET:
+                elevatorInst.Clear();
+                for (int i = 0; i < 5; i++) floorQueue[i].clear();
+                lastActivity = 0;
+                break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
-            
             }
         }
         break;
     case WM_TIMER: {
-        if (!elevatorInst.Movement()) break;
+        elevatorInst.Movement(floorQueue);
         InvalidateRect(hWnd, NULL, TRUE);
+        if (GetTickCount64() - lastActivity >= 5000 && elevatorInst.peopleInElevator.empty() && elevatorInst.queue.empty()) {
+            int count = 0;
+            for (int i = 0; i < 5; i++) if (floorQueue[i].empty()) count++;
+            if (count == 4) elevatorInst.addToQueue(0);
+        }
         return 0;
     }
     break;

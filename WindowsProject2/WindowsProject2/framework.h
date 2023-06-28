@@ -15,8 +15,15 @@
 #include <tchar.h>
 #include <gdiplus.h>
 #include <vector>
+#include <iterator>
+#include <stack>
+#include <algorithm>
 #pragma comment(lib,"gdiplus.lib")
 using namespace Gdiplus;
+
+
+using namespace std;
+
 
 // Własne pliki nagłówkowe
 #include "elevator.h"
