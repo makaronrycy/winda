@@ -118,13 +118,15 @@ void PaintScenery(HDC hdc)
         Rect PersonSpace(peep.x, peep.y, PersonImg.GetWidth() / 2, PersonImg.GetHeight() / 2);
         graphics.DrawImage(&PersonImg, PersonSpace);
     }
+    TextOut(hdc, 0, 0, L"Aktualna Waga:", 14);
+
     wchar_t buffer[256];
     int weight = elevatorInst.GetWeight();
-    if (!weight) TextOut(hdc, 100, 0, L"0", 1);
+    if (!weight) TextOut(hdc, 105, 0, L"0", 1);
     else {
         wsprintfW(buffer, L"%d", weight);
         int digits = floor(log10(weight) + 1) + 1;
-        TextOut(hdc, 100, 0, buffer, digits);
+        TextOut(hdc, 105, 0, buffer, digits);
     }
 }
 //

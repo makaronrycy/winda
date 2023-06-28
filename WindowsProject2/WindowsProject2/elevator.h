@@ -51,7 +51,7 @@ private:
 Elevator::Elevator() {
     this->floor = 0;
     this->max_weight = MAX_WEIGHT;
-    this->velocity = 1;
+    this->velocity = 4;
     this->y = 0;
     this->destination = 0;
     this->passenger_got = false;
@@ -163,6 +163,7 @@ int Elevator::GetWeight() {
     return this->weight;
 }
 void Elevator::Movement(vector<Person>* persons) {
+    if (weight >= max_weight) return;
     //elevator movement
     if (y < destination * DISTANCE_BETWEEN_FLOORS-velocity) y += velocity;
     else if (y > destination * DISTANCE_BETWEEN_FLOORS+velocity) y -= velocity;
@@ -172,13 +173,14 @@ void Elevator::Movement(vector<Person>* persons) {
         //people going in
         for (auto& peep : persons[floor]) {
             if (peep.direction == STOP) {
+                int x = peopleInElevator.size();
                 if (floor % 2 == 0) {
                     peep.direction = RIGHT;
-                    peep.goal_x = peep.x + 350;
+                    peep.goal_x = peep.x + 400 + (x*10);
                 }
                 else {
                     peep.direction = LEFT;
-                    peep.goal_x = peep.x - 350;
+                    peep.goal_x = peep.x - 420 + (x*10);
                 }
             }
         }
