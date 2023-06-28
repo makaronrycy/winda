@@ -174,11 +174,13 @@ void Elevator::Movement(vector<Person>* persons) {
             if (peep.direction == STOP) {
                 if (floor % 2 == 0) {
                     peep.direction = RIGHT;
-                    peep.goal_x = peep.x + 350;
+                    int x = peopleInElevator.size();
+                    peep.goal_x = peep.x + 400+ (x*10);
                 }
                 else {
                     peep.direction = LEFT;
-                    peep.goal_x = peep.x - 350;
+                    int x = peopleInElevator.size();
+                    peep.goal_x = peep.x - 350 - (x*10);
                 }
             }
         }
