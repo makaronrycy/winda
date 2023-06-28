@@ -1,5 +1,5 @@
 #pragma once
-const int MAX_WEIGHT = 100; //placeholder
+const int MAX_WEIGHT = 600; 
 const int DISTANCE_BETWEEN_FLOORS = 150;
 enum DIRECTION {UP,DOWN,STOP,LEFT,RIGHT};
 class Person {
@@ -19,6 +19,7 @@ public:
         this->x = x;
         this->y = y;
         this->direction = STOP;
+        this->goal_x = 0;
     }
 };
 class Elevator {
@@ -29,10 +30,14 @@ public:
     void Movement(vector<Person>* persons);
     int GetDestination();
     int GetPositionY();
-    void addToQueue(Person person);
-    void requestHandler(vector<Person> *persons);
+    void addToQueue(int request);
     void ChangeDirection();
+    void sortQueue();
+    void DeleteFrontRequest();
+    int GetWeight();
+    void Clear();
     vector<Person> peopleInElevator;
+    vector<int> queue;
 private:
     int floor;
     int destination;
@@ -40,20 +45,30 @@ private:
     int max_weight;
     int velocity;
     int y;
-   
+    int weight;
     DIRECTION direction;
-    vector<int> queue;
-
-    
 };
 Elevator::Elevator() {
     this->floor = 0;
     this->max_weight = MAX_WEIGHT;
-    this->velocity = 3;
+    this->velocity = 1;
     this->y = 0;
     this->destination = 0;
     this->passenger_got = false;
-    this->direction = UP;
+    this->direction = STOP;
+    this->weight = 0;
+}
+void Elevator::Clear() {
+    this->floor = 0;
+    this->max_weight = MAX_WEIGHT;
+    this->velocity = 1;
+    this->y = 0;
+    this->destination = 0;
+    this->passenger_got = false;
+    this->direction = STOP;
+    this->weight = 0;
+    peopleInElevator.clear();
+    queue.clear();
 }
 int Elevator::GetPositionY() {
     return this->y;
@@ -69,41 +84,88 @@ int Elevator::GetFloor(){
     return floor;
 }
 
-void Elevator::addToQueue(Person person) {
+void Elevator::addToQueue(int request) {
     if (queue.empty()) {
-        if (person.origin < floor) direction = DOWN;
-        else if (person.origin > floor) direction = UP;
-        else direction = STOP;
-        queue.push_back(person.origin);
-        queue.push_back(person.destination);
+        if (request < floor) direction = DOWN;
+        else if (request > floor) direction = UP;
+        queue.push_back(request);
         return;
     }
-    //TODO: lepszy algorytm dla windy
-    queue.push_back(person.origin);
-    queue.push_back(person.destination);
+    queue.push_back(request);
+    sortQueue();
 }
-void Elevator::requestHandler(vector<Person> *persons) {
-    if (queue.empty()) return;
-    if (direction != STOP) {
-        destination = queue.front();
-        if (floor == destination) {
-            queue.erase(queue.begin());
-            ChangeDirection();
+void Elevator::sortQueue() {
+    int cur_track;
+    vector<int> up, down;
+    int head = floor;
+
+    for (int i = 0; i < queue.size(); i++) {
+        if (queue[i] < head)
+            down.push_back(queue[i]);
+        if (queue[i] > head)
+            up.push_back(queue[i]);
+        if (queue[i] == head && direction == UP)
+            down.push_back(queue[i]);
+    }
+    DIRECTION Sdirection = direction;
+    // sorting left and right vectors
+    std::sort(up.begin(), up.end());
+    std::sort(down.begin(), down.end());
+
+    if (Sdirection == STOP) {
+        if (queue.front() > floor) Sdirection = UP;
+        else Sdirection = DOWN;
+    }
+    // run the while loop two times.
+    // one by one scanning right
+    // and left of the head
+    queue.clear();
+    int run = 2;
+    while (run != 0) {
+        if (Sdirection == DOWN) {
+            for (int i = down.size() - 1; i >= 0; i--) {
+                cur_track = down[i];
+                // appending current track to seek sequence
+                queue.push_back(cur_track);
+            }
+            Sdirection = UP;
         }
+        else if (Sdirection == UP) {
+            for (int i = 0; i < up.size(); i++) {
+                cur_track = up[i];
+                // appending current track to seek sequence
+                queue.push_back(cur_track);
+            }
+            Sdirection = DOWN;
+        }
+        run--;
     }
 }
 void Elevator::ChangeDirection() {
     if (queue.empty()) direction = STOP;
-    else if (queue.front() < floor) direction = DOWN;
-    else if (queue.front() > floor) direction = UP;
+    else if (destination < floor) {
+        direction = DOWN;
+        //sortQueue();
+    }
+    else if (destination > floor) {
+        direction = UP;
+        //sortQueue();
+    }
+    else if (destination == floor) direction = STOP;
     for (auto& peep : peopleInElevator) {
         peep.direction = direction;
     }
 }
+void Elevator::DeleteFrontRequest() {
+    if (!queue.empty()) queue.erase(queue.begin());
+}
+int Elevator::GetWeight() {
+    return this->weight;
+}
 void Elevator::Movement(vector<Person>* persons) {
     //elevator movement
-    if (y < destination * DISTANCE_BETWEEN_FLOORS) y += velocity;
-    else if (y > destination * DISTANCE_BETWEEN_FLOORS) y -= velocity;
+    if (y < destination * DISTANCE_BETWEEN_FLOORS-velocity) y += velocity;
+    else if (y > destination * DISTANCE_BETWEEN_FLOORS+velocity) y -= velocity;
     else {
         floor = destination;
         ChangeDirection();
@@ -123,6 +185,7 @@ void Elevator::Movement(vector<Person>* persons) {
         //people going out
         for (auto& peep : peopleInElevator) {
             if (peep.destination == floor) {
+                weight -= peep.weight;
                 if (floor % 2 != 0) {
                     peep.direction = RIGHT;
                     peep.goal_x = peep.x + 350;
@@ -131,6 +194,7 @@ void Elevator::Movement(vector<Person>* persons) {
                     peep.direction = LEFT;
                     peep.goal_x = peep.x - 350;
                 }
+                DeleteFrontRequest();
                 persons[floor].push_back(peep);
             }
         }
@@ -142,13 +206,23 @@ void Elevator::Movement(vector<Person>* persons) {
         case LEFT:
             peep.x -= velocity;
             if (peep.x <= peep.goal_x) {
-                peopleInElevator.push_back(peep);
+                //only execute when going into elevator
+                if (floor != peep.destination) {
+                    peopleInElevator.push_back(peep);
+                    addToQueue(peep.destination);
+                    weight += peep.weight;
+                }
             }
             break;
         case RIGHT:
             peep.x += velocity;
             if (peep.x >= peep.goal_x) {
-                peopleInElevator.push_back(peep);
+                //only execute when going into elevator
+                if (floor != peep.destination) {
+                    peopleInElevator.push_back(peep);
+                    addToQueue(peep.destination);
+                    weight += peep.weight;
+                }
             }
             break;
         case STOP:
@@ -165,6 +239,7 @@ void Elevator::Movement(vector<Person>* persons) {
         persons[floor].end()
     );
     for (auto& peep : peopleInElevator) {
+        peep.direction = direction;
         switch (peep.direction) {
         case UP:
             peep.y -= velocity;
@@ -173,12 +248,6 @@ void Elevator::Movement(vector<Person>* persons) {
             peep.y += velocity;
             break;
         case STOP:
-            break;
-        case LEFT:
-            peep.x -= velocity;
-            break;
-        case RIGHT:
-            peep.x += velocity;
             break;
         }
     }
@@ -191,8 +260,7 @@ void Elevator::Movement(vector<Person>* persons) {
         peopleInElevator.end()
     );
     if (persons[floor].empty() && !queue.empty()) {
+        destination = queue.front();
         ChangeDirection();
-        requestHandler(persons);
     }
-
 }

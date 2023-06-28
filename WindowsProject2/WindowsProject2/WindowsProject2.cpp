@@ -28,7 +28,7 @@ BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
-const ULONGLONG interval = 33;
+const ULONGLONG interval = 10;
 
 void ButtonPress(int button_id, HWND hWnd) {
     int destination = button_id % 10;
@@ -37,8 +37,7 @@ void ButtonPress(int button_id, HWND hWnd) {
     int y = ELEVATOR_BOTTOM-(origin / 2) *2* DISTANCE_BETWEEN_FLOORS - (origin % 2) * DISTANCE_BETWEEN_FLOORS - 132/2;
     Person person(destination,origin,x,y);
     floorQueue[origin].push_back(person);
-    elevatorInst.addToQueue(person);
-    elevatorInst.requestHandler(floorQueue);
+    elevatorInst.addToQueue(origin);
     ValidateRect(hWnd, NULL);
 }
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -120,8 +119,13 @@ void PaintScenery(HDC hdc)
         graphics.DrawImage(&PersonImg, PersonSpace);
     }
     wchar_t buffer[256];
-    wsprintfW(buffer, L"%d", (int)GetTickCount64());
-    TextOut(hdc, 0, 0, buffer, 8);
+    int weight = elevatorInst.GetWeight();
+    if (!weight) TextOut(hdc, 100, 0, L"0", 1);
+    else {
+        wsprintfW(buffer, L"%d", weight);
+        int digits = floor(log10(weight) + 1) + 1;
+        TextOut(hdc, 100, 0, buffer, digits);
+    }
 }
 //
 //  FUNKCJA: MyRegisterClass()
@@ -193,6 +197,19 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
                NULL);      // Pointer not needed.
        }
    }
+    HWND hwndButton = CreateWindow(
+        L"BUTTON",  // Predefined class; Unicode assumed 
+        L"RESET",      // Button text 
+        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
+        200,         // x position 
+        0,// y position 
+        50,        // Button width
+        20,        // Button height
+        hWnd,     // Parent window
+        (HMENU)ID_RESET, //first digit origin, second digit destination
+        (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE),
+        NULL);      // Pointer not needed.
+
    ShowWindow(hWnd, 3);
    UpdateWindow(hWnd);
 
@@ -212,6 +229,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    static ULONGLONG lastActivity = GetTickCount64();
     switch (message)
     {
     case WM_COMMAND:
@@ -230,15 +248,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case IDM_EXIT:
                 DestroyWindow(hWnd);
                 break;
+            case ID_RESET:
+                elevatorInst.Clear();
+                for (int i = 0; i < 5; i++) floorQueue[i].clear();
+                lastActivity = 0;
+                break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
-            
             }
         }
         break;
     case WM_TIMER: {
         elevatorInst.Movement(floorQueue);
         InvalidateRect(hWnd, NULL, TRUE);
+        if (GetTickCount64() - lastActivity >= 5000 && elevatorInst.peopleInElevator.empty() && elevatorInst.queue.empty()) {
+            int count = 0;
+            for (int i = 0; i < 5; i++) if (floorQueue[i].empty()) count++;
+            if (count == 4) elevatorInst.addToQueue(0);
+        }
         return 0;
     }
     break;

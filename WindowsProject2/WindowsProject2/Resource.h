@@ -16,6 +16,7 @@
 #ifndef IDC_STATIC
 #define IDC_STATIC				-1
 #endif
+#define ID_RESET				55
 // Następne wartości domyślne dla nowych obiektów
 //
 #ifdef APSTUDIO_INVOKED
